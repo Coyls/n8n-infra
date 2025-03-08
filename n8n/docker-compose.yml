@@ -5,6 +5,9 @@ services:
     networks:
       - traefik_proxy
     labels:
+      # Autoheal
+      - autoheal=true
+      # Traefik
       - traefik.enable=true
       - traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)
       - traefik.http.routers.n8n.tls=true
