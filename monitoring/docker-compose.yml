@@ -1,0 +1,31 @@
+networks:
+  traefik_proxy:
+    external: true
+  project_silicate:
+    external: true
+
+services:
+  autoheal:
+    image: willfarrell/autoheal
+    container_name: autoheal
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+    networks:
+      - traefik_proxy
+      - project_silicate
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"

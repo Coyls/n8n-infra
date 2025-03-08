@@ -1,0 +1,65 @@
+volumes:
+  qdrant_data:
+  qdrant_snapshots:
+
+networks:
+  project_silicate:
+    external: true
+  traefik_proxy:
+    external: true
+
+services:
+  qdrant:
+    image: custom-qdrant:v1.13.4-unprivileged
+    user: "1000:1000"
+    restart: always
+    container_name: qdrant
+    security_opt:
+      - no-new-privileges:true
+    configs:
+      - source: qdrant_config
+        target: /qdrant/config/production.yaml
+    volumes:
+      - qdrant_data:/qdrant/storage
+      - qdrant_snapshots:/qdrant/snapshots
+    networks:
+      - project_silicate
+      - traefik_proxy
+    labels:
+      # Autoheal
+      - "autoheal=true"
+      # Traefik
+      - "traefik.enable=true"
+      - "traefik.http.routers.qdrant.entrypoints=websecure"
+      - "traefik.http.routers.qdrant.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.qdrant.tls=true"
+      - "traefik.http.routers.qdrant.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.qdrant.loadbalancer.server.port=6333"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.5'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+
+configs:
+  qdrant_config:
+    content: |
+      log_level: INFO
+      service:
+        api_key: ${QDRANT_API_KEY}

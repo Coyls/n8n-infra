@@ -1,0 +1,46 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    restart: always
+    networks:
+      - traefik_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)
+      - traefik.http.routers.n8n.tls=true
+      - traefik.http.routers.n8n.entrypoints=web,websecure
+      - traefik.http.routers.n8n.tls.certresolver=mytlschallenge
+
+      # Ajout des middlewares de sécurité
+      - traefik.http.middlewares.n8n-headers.headers.SSLRedirect=true
+      - traefik.http.middlewares.n8n-headers.headers.STSSeconds=315360000
+      - traefik.http.middlewares.n8n-headers.headers.browserXSSFilter=true
+      - traefik.http.middlewares.n8n-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.n8n-headers.headers.forceSTSHeader=true
+      - traefik.http.middlewares.n8n-headers.headers.SSLHost=${DOMAIN_NAME}
+      - traefik.http.middlewares.n8n-headers.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.n8n-headers.headers.STSPreload=true
+
+      # Appliquer les middlewares à n8n  
+      - traefik.http.routers.n8n.middlewares=n8n-headers@docker
+
+    environment:
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /home/coyls/n8n-local-files:/files
+
+networks:
+  traefik_proxy:
+    external: true
+
+volumes:
+  n8n_data:
+    external: true

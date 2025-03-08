@@ -1,0 +1,129 @@
+x-logging: &default-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+      compress: "true"
+
+networks:
+  traefik_proxy:
+    external: true
+  project_silicate:
+    external: true
+
+volumes:
+  postgres_data:
+    name: postgres_db_data
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    shm_size: 256mb
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    networks:
+      - project_silicate
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    labels:
+      - "autoheal=true"
+      - "project.description=PostgreSQL Database for Project Silicate"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1'
+    command: 
+      - "postgres"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "shared_buffers=256MB"
+    <<: *default-logging
+
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    networks:
+      - traefik_proxy
+      - project_silicate
+    labels:
+      # Autoheal
+      - "autoheal=true"
+      # Traefik
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.adminer.entrypoints=websecure"
+      - "traefik.http.routers.adminer.tls.certresolver=mytlschallenge"
+      - "traefik.http.middlewares.adminer-auth.basicauth.users=${ADMINER_AUTH}"
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+      - "traefik.http.routers.adminer.middlewares=adminer-auth"
+      - "project.description=Database Management Interface"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DESIGN=dracula
+    depends_on:
+      postgres:
+        condition: service_healthy
+    <<: *default-logging
+
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./backups:/backups
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - HEALTHCHECK_PORT=8081
+    networks:
+      - project_silicate
+    labels:
+      - "autoheal=true"
+      - "project.description=Automated Database Backup Service"
+    healthcheck:
+      test: ["CMD", "ls", "/backups"]
+      interval: 1h
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    <<: *default-logging
