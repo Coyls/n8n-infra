@@ -26,8 +26,8 @@ services:
       - "--ping=true"
       - "--ping.entrypoint=web"
       # DEBUG
-      # - "--accesslog=true"
-      # - "--log.level=DEBUG"
+      - "--accesslog=true"
+      - "--log.level=DEBUG"
     labels:
       # Traefik
       - "traefik.enable=true"
