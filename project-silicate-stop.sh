@@ -38,7 +38,7 @@ echo ""
 # D'abord les services applicatifs, puis les services d'infrastructure
 
 # 1. Arrêter n8n (service applicatif)
-#stop_service "${BASE_DIR}/n8n"
+stop_service "${BASE_DIR}/n8n"
 
 # 2. Arrêter qdrant (service de base de données vectorielle)
 stop_service "${BASE_DIR}/qdrant"

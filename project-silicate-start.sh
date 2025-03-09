@@ -148,7 +148,7 @@ echo ""
 # Création des volumes externes s'ils n'existent pas
 echo -e "${BLUE}=== Vérification et création des volumes Docker ===${NC}"
 create_volume_if_not_exists "traefik_data"
-# ?? create_volume_if_not_exists "n8n_data"
+create_volume_if_not_exists "n8n_data"
 echo ""
 
 # Ordre de démarrage (infrastructure d'abord, puis services applicatifs)
@@ -170,7 +170,7 @@ start_service "${BASE_DIR}/qdrant"
 wait_for_service "qdrant" 10 10
 
 # 5. Démarrer n8n (service applicatif) en dernier
-# ?? start_service "${BASE_DIR}/n8n"
+start_service "${BASE_DIR}/n8n"
 
 echo -e "${GREEN}=== Tous les services ont été démarrés ===${NC}"
 

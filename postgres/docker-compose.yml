@@ -95,6 +95,7 @@ services:
 
   postgres-backup:
     image: prodrigestivill/postgres-backup-local
+    container_name: postgres-backup
     restart: always
     security_opt:
       - no-new-privileges:true

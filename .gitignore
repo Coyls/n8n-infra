@@ -11,4 +11,5 @@ logs/
 # Fichiers de données
 data/
 
-
+# Fichiers locaux
+n8n-local-files/

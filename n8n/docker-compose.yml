@@ -2,8 +2,12 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n
     restart: always
+    container_name: n8n
+    security_opt:
+      - no-new-privileges:true
     networks:
       - traefik_proxy
+      - project_silicate
     labels:
       # Autoheal
       - autoheal=true
@@ -24,24 +28,73 @@ services:
       - traefik.http.middlewares.n8n-headers.headers.STSIncludeSubdomains=true
       - traefik.http.middlewares.n8n-headers.headers.STSPreload=true
 
-      # Appliquer les middlewares à n8n  
+      # Appliquer les middlewares à n8n
       - traefik.http.routers.n8n.middlewares=n8n-headers@docker
+      
+      # Définir le port du service
+      - traefik.http.services.n8n.loadbalancer.server.port=5678
 
     environment:
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-      - N8N_RUNNERS_ENABLED=true
+      # Node
+      - NODE_ENV=production
+      # n8n Basics
+      - N8N_PROTOCOL=https
       - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
       - N8N_PORT=5678
-      - N8N_PROTOCOL=https
-      - NODE_ENV=production
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
+
+      # Encryption Key
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+
+      # Database
+      - DB_TYPE=${DB_TYPE}
+      - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}
+      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}
+      - DB_POSTGRESDB_PORT=${DB_POSTGRESDB_PORT}
+
+      # Internal services
+      - QDRANT_HOST=qdrant:6333
+      # - OLLAMA_HOST=ollama:11434
+
+      # Timezone
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      
+      # Sécurité supplémentaire
+      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
+      - N8N_USER_FOLDER=/home/node/.n8n
     volumes:
       - n8n_data:/home/node/.n8n
-      - /home/coyls/n8n-local-files:/files
+      - ./backup:/backup
+      - ${N8N_LOCAL_FILES_ROOT}:/files
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://0.0.0.0:5678/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
+        reservations:
+          memory: 1G
+          cpus: '0.1'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
 
 networks:
   traefik_proxy:
+    external: true
+  project_silicate:
     external: true
 
 volumes:
