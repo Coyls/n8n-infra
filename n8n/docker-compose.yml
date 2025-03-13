@@ -57,7 +57,7 @@ services:
 
       # Timezone
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
-      
+
       # Sécurité supplémentaire
       - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=false
       - N8N_USER_FOLDER=/home/node/.n8n
@@ -66,7 +66,7 @@ services:
       - ./backup:/backup
       - ${N8N_LOCAL_FILES_ROOT}:/files
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://0.0.0.0:5678/"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://0.0.0.0:5678/" ]
       interval: 30s
       timeout: 10s
       retries: 3

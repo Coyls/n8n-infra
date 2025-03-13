@@ -1,8 +1,29 @@
+x-logging: &default-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "20m"
+      max-file: "3"
+      compress: "true"
+
+x-monitoring-logging: &monitoring-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "50m"
+      max-file: "5"
+      compress: "true"
+
 networks:
   traefik_proxy:
     external: true
   project_silicate:
     external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
 
 services:
   autoheal:
@@ -21,11 +42,162 @@ services:
     environment:
       - AUTOHEAL_CONTAINER_LABEL=autoheal
     networks:
-      - traefik_proxy
       - project_silicate
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        compress: "true"
+      - traefik_proxy
+    <<: *default-logging
+    healthcheck:
+      test: [ "CMD", "sh", "-c", "ps aux | grep autoheal | grep -v grep" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "autoheal=true"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.3'
+    networks:
+      - project_silicate
+      ## !! LEARNING DELETE THIS !!
+      # - traefik_proxy
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    labels:
+      - "autoheal=true"
+      ## !! LEARNING DELETE THIS !!
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN_NAME}`)"
+      # - "traefik.http.routers.prometheus.entrypoints=websecure"
+      # - "traefik.http.routers.prometheus.tls.certresolver=mytlschallenge"
+      # - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+    <<: *monitoring-logging
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.3'
+    networks:
+      - project_silicate
+      - traefik_proxy
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "autoheal=true"
+    <<: *monitoring-logging
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.2'
+    networks:
+      - project_silicate
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /:/rootfs:ro
+    labels:
+      - "autoheal=true"
+    <<: *default-logging
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+    networks:
+      - project_silicate
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    labels:
+      - "autoheal=true"
+    <<: *default-logging
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:9100/metrics" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+    networks:
+      - project_silicate
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    labels:
+      - "autoheal=true"
+    <<: *default-logging
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

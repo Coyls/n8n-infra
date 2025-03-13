@@ -2,6 +2,7 @@ volumes:
   qdrant_data:
   qdrant_snapshots:
 
+
 networks:
   project_silicate:
     external: true
@@ -36,7 +37,7 @@ services:
       - "traefik.http.routers.qdrant.tls.certresolver=mytlschallenge"
       - "traefik.http.services.qdrant.loadbalancer.server.port=6333"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      test: [ "CMD", "curl", "-f", "http://localhost:6333/healthz" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -55,7 +56,6 @@ services:
         reservations:
           memory: 1G
           cpus: '0.5'
-
 
 configs:
   qdrant_config:

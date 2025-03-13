@@ -37,7 +37,7 @@ services:
       - "autoheal=true"
       - "project.description=PostgreSQL Database for Project Silicate"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +46,7 @@ services:
         limits:
           memory: 1G
           cpus: '1'
-    command: 
+    command:
       - "postgres"
       - "-c"
       - "max_connections=100"
@@ -81,7 +81,7 @@ services:
       - "traefik.http.routers.adminer.middlewares=adminer-auth"
       - "project.description=Database Management Interface"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080" ]
       interval: 30s
       timeout: 30s
       retries: 5
@@ -115,7 +115,7 @@ services:
       - "autoheal=true"
       - "project.description=Automated Database Backup Service"
     healthcheck:
-      test: ["CMD", "ls", "/backups"]
+      test: [ "CMD", "ls", "/backups" ]
       interval: 1h
       timeout: 10s
       retries: 3
