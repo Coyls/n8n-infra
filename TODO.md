@@ -18,3 +18,6 @@
 - [ ] Documenter l'architecture complète de l'infrastructure
 - [ ] Créer un guide de dépannage pour les problèmes courants
 - [ ] Documenter les variables d'environnement requises pour chaque service
+
+## Feature
+- [ ] Transformer le script update-n8n.sh en cron job
