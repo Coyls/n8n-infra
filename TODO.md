@@ -20,4 +20,4 @@
 - [ ] Documenter les variables d'environnement requises pour chaque service
 
 ## Feature
-- [ ] Transformer le script update-n8n.sh en cron job
+- [x] Transformer le script update-n8n.sh en cron job
