@@ -1,2 +1,4 @@
+backup
 backup/credentials*.json
+backup/workflows*.json
 update-logs/

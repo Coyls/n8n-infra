@@ -17,7 +17,7 @@ x-monitoring-logging: &monitoring-logging
 networks:
   traefik_proxy:
     external: true
-  project_silicate:
+  n8n_infra:
     external: true
 
 volumes:
@@ -42,7 +42,7 @@ services:
     environment:
       - AUTOHEAL_CONTAINER_LABEL=autoheal
     networks:
-      - project_silicate
+      - n8n_infra
       - traefik_proxy
     <<: *default-logging
     healthcheck:
@@ -66,7 +66,7 @@ services:
           memory: 1G
           cpus: '0.3'
     networks:
-      - project_silicate
+      - n8n_infra
       ## !! LEARNING DELETE THIS !!
       # - traefik_proxy
     volumes:
@@ -100,7 +100,7 @@ services:
           memory: 512M
           cpus: '0.3'
     networks:
-      - project_silicate
+      - n8n_infra
       - traefik_proxy
     volumes:
       - grafana_data:/var/lib/grafana
@@ -135,7 +135,7 @@ services:
           memory: 256M
           cpus: '0.2'
     networks:
-      - project_silicate
+      - n8n_infra
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/sys:ro
@@ -157,7 +157,7 @@ services:
           memory: 128M
           cpus: '0.1'
     networks:
-      - project_silicate
+      - n8n_infra
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -189,7 +189,7 @@ services:
           memory: 128M
           cpus: '0.1'
     networks:
-      - project_silicate
+      - n8n_infra
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     labels:

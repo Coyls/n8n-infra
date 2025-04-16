@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# Définir les couleurs pour une meilleure lisibilité
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Fonction pour créer un réseau Docker s'il n'existe pas
 create_network_if_not_exists() {
     local network_name=$1
     
@@ -26,7 +24,6 @@ create_network_if_not_exists() {
     fi
 }
 
-# Fonction pour créer un volume Docker s'il n'existe pas
 create_volume_if_not_exists() {
     local volume_name=$1
     
@@ -44,18 +41,16 @@ create_volume_if_not_exists() {
     fi
 }
 
-# Fonction pour vérifier si une image Docker existe
 check_image_exists() {
     local image_name=$1
     
     if docker image inspect "$image_name" &> /dev/null; then
-        return 0  # Image existe
+        return 0
     else
-        return 1  # Image n'existe pas
+        return 1
     fi
 }
 
-# Fonction pour démarrer un service Docker Compose
 start_service() {
     local service_dir=$1
     local service_name=$(basename "$service_dir")
@@ -65,14 +60,12 @@ start_service() {
     if [ -f "${service_dir}/docker-compose.yml" ]; then
         cd "${service_dir}" || { echo -e "${RED}Impossible d'accéder au répertoire ${service_dir}${NC}"; return 1; }
         
-        # Vérifier si un fichier .env existe
         if [ -f ".env" ]; then
             echo -e "${YELLOW}Utilisation du fichier .env pour ${service_name}${NC}"
         else
             echo -e "${YELLOW}Attention: Aucun fichier .env trouvé pour ${service_name}${NC}"
         fi
         
-        # Si c'est le service Qdrant, vérifier que l'image personnalisée existe
         if [ "$service_name" = "qdrant" ]; then
             if ! check_image_exists "custom-qdrant:v1.13.4-unprivileged"; then
                 echo -e "${RED}ERREUR: L'image custom-qdrant:v1.13.4-unprivileged n'existe pas.${NC}"
@@ -82,7 +75,6 @@ start_service() {
             fi
         fi
         
-        # Démarrer les services
         echo -e "${YELLOW}Exécution de 'docker compose up -d' dans ${service_name}...${NC}"
         docker compose up -d
         
@@ -100,7 +92,6 @@ start_service() {
     echo ""
 }
 
-# Fonction pour vérifier si un service est prêt
 wait_for_service() {
     local container_name=$1
     local max_attempts=$2
@@ -113,7 +104,6 @@ wait_for_service() {
         if docker ps | grep -q "$container_name"; then
             local health=$(docker inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null)
             
-            # Si le conteneur n'a pas de health check, on considère qu'il est prêt
             if [ -z "$health" ] || [ "$health" = "null" ]; then
                 echo -e "${GREEN}${container_name} est démarré (pas de health check)${NC}"
                 return 0
@@ -132,49 +122,39 @@ wait_for_service() {
     return 1
 }
 
-# Chemin du répertoire de base (où se trouve ce script)
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo -e "${GREEN}=== Démarrage de l'infrastructure Project Silicate ===${NC}"
+echo -e "${GREEN}=== Démarrage de l'infrastructure n8n-infra ===${NC}"
 echo -e "${YELLOW}Répertoire de base: ${BASE_DIR}${NC}"
 echo ""
 
-# Création des réseaux externes s'ils n'existent pas
 echo -e "${BLUE}=== Vérification et création des réseaux Docker ===${NC}"
 create_network_if_not_exists "traefik_proxy"
-create_network_if_not_exists "project_silicate"
+create_network_if_not_exists "n8n_infra"
 echo ""
 
-# Création des volumes externes s'ils n'existent pas
 echo -e "${BLUE}=== Vérification et création des volumes Docker ===${NC}"
 create_volume_if_not_exists "traefik_data"
 create_volume_if_not_exists "n8n_data"
 echo ""
 
-# Ordre de démarrage (infrastructure d'abord, puis services applicatifs)
 
-# 1. Démarrer traefik (reverse proxy) en premier
 start_service "${BASE_DIR}/traefik"
 wait_for_service "traefik" 10 10
 
-# 2. Démarrer monitoring (service de surveillance)
 start_service "${BASE_DIR}/monitoring"
 wait_for_service "autoheal" 5 5
 
-# 3. Démarrer postgres (service de base de données)
 start_service "${BASE_DIR}/postgres"
 wait_for_service "postgres_db" 15 5
 
-# 4. Démarrer qdrant (service de base de données vectorielle)
 start_service "${BASE_DIR}/qdrant"
 wait_for_service "qdrant" 10 10
 
-# 5. Démarrer n8n (service applicatif) en dernier
 start_service "${BASE_DIR}/n8n"
 
 echo -e "${GREEN}=== Tous les services ont été démarrés ===${NC}"
 
-# Afficher l'état des conteneurs pour vérification
 echo -e "${YELLOW}Conteneurs en cours d'exécution :${NC}"
 docker ps
 

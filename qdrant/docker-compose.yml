@@ -4,9 +4,9 @@ volumes:
 
 
 networks:
-  project_silicate:
-    external: true
   traefik_proxy:
+    external: true
+  n8n_infra:
     external: true
 
 services:
@@ -24,7 +24,7 @@ services:
       - qdrant_data:/qdrant/storage
       - qdrant_snapshots:/qdrant/snapshots
     networks:
-      - project_silicate
+      - n8n_infra
       - traefik_proxy
     labels:
       # Autoheal

@@ -1,15 +1,14 @@
 #!/bin/bash
-
 # Script de mise à jour automatique pour n8n
 
 set -euo pipefail
 
-N8N_DIR="/home/coyls/project-silicate/n8n"
-
-LOG_FILE="/home/coyls/project-silicate/n8n/update-logs/n8n-update-$(date +\%Y\%m\%d-\%H\%M\%S).log"
+N8N_DIR="/home/coyls/n8n-infra/n8n"
+LOG_DIR="$N8N_DIR/update-logs"
+LOG_FILE="$LOG_DIR/n8n-update-$(date +\%Y\%m\%d-\%H\%M\%S).log"
 SYSTEM_LOG="/var/log/n8n-update.log"
 
-mkdir -p "/home/coyls/project-silicate/n8n/update-logs"
+mkdir -p "$LOG_DIR"
 
 OPERATION_ID="OP-$(date +%s)-$(printf '%04x' $RANDOM)"
 SERVICE_CONTEXT="n8n-updater"
@@ -21,7 +20,7 @@ YELLOW='\033[0;33m'
 RED='\033[0;31m'
 BRIGHT_RED='\033[1;31m'
 BLINK='\033[5m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 log() {
     local level=$1
