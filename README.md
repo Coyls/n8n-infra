@@ -1,13 +1,13 @@
 # n8n-infra
 
-A complete self-hosted infrastructure for n8n automation platform with monitoring, backup, and high availability features.
+A self-hosted infrastructure setup for n8n automation platform, featuring monitoring, backup, and container management.
 
 ## Overview
 
-n8n-infra provides a production-ready setup for running n8n with all necessary supporting services:
+n8n-infra provides a setup for running n8n with supporting services:
 
 - **n8n**: Workflow automation platform
-- **PostgreSQL**: Database with automated backups
+- **PostgreSQL**: Database with automated backups and health checks
 - **Qdrant**: Vector database for AI/ML features
 - **Traefik**: Reverse proxy with automatic SSL
 - **Monitoring**: Prometheus, Grafana, and health checks
@@ -15,12 +15,12 @@ n8n-infra provides a production-ready setup for running n8n with all necessary s
 
 ## Features
 
-- **Secure**: All services run with security best practices
-- **Auto-healing**: Automatic container recovery
-- **Monitoring**: Comprehensive monitoring with Prometheus and Grafana
-- **Backup**: Automated database backups
-- **SSL**: Automatic SSL certificates with Traefik
-- **Production-ready**: Optimized for production use
+- **Security**: Services run with security constraints and network isolation
+- **Auto-healing**: Container health monitoring and automatic recovery
+- **Monitoring**: Metrics collection with Prometheus and Grafana
+- **Backup**: Automated database backups with retention policy
+- **SSL**: SSL certificate management through Traefik
+- **Container Management**: Automated container lifecycle management
 
 ## Prerequisites
 
@@ -121,21 +121,17 @@ The script handles its own logging with timestamps and different log levels.
 
 ## Important Notice
 
-This infrastructure is provided "AS IS" without any warranty. By using this software, you agree to the following:
+This infrastructure is provided "AS IS" without any warranty. By using this software, you acknowledge that:
 
-1. **Disclaimer**: This is a personal project for learning and experimentation. The author provides no guarantees regarding its functionality or suitability for any purpose.
+1. **Disclaimer**: This is a personal project for learning and experimentation. While it includes production-like features, the author provides no guarantees regarding its functionality or suitability for any specific purpose.
 
-2. **Responsibility**: Users are responsible for their own setup, maintenance, and troubleshooting.
+2. **Responsibility**: Users are responsible for their own setup, maintenance, and troubleshooting. The infrastructure provides a foundation that can be adapted to specific needs.
 
-3. **Modifications**: If you modify this infrastructure, you must share your modifications under the same GPL v2.0 license.
-
-## License
-
-This project is licensed under the GNU General Public License v2.0. See the [LICENSE](LICENSE) file for full details.
+3. **License**: This project is licensed under GPL v2.0. If you modify this infrastructure, you must share your modifications under the same license.
 
 ## Contributing
 
-Hey! I'm still learning and would love to hear your thoughts! If you have any suggestions to make this better or spot something that could be improved:
-- Feel free to open an issue to chat about it
-- If you want to help out, pull requests are welcome
-- Your feedback and experiences would be super helpful
+I'm still learning and would love to hear your thoughts! If you have suggestions or spot areas for improvement:
+- Feel free to open an issue to discuss
+- Pull requests are welcome
+- Your feedback and experiences would be valuable
